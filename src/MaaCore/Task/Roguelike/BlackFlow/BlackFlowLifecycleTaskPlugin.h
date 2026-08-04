@@ -17,6 +17,9 @@ protected:
     virtual bool _run() override;
 
 private:
+    // 见 BlackFlowRoutingTaskPlugin.h：_run() 只当异常闸门，真正的逻辑在 run_impl()。
+    bool run_impl();
+
     enum class PendingWork
     {
         None,

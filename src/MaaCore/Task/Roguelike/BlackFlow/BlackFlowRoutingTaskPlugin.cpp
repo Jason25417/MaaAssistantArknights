@@ -32,6 +32,28 @@ void BlackFlowRoutingTaskPlugin::reset_in_run_variables()
 
 bool BlackFlowRoutingTaskPlugin::_run()
 {
+    std::string reason;
+    try {
+        return run_impl();
+    }
+    catch (const std::exception& exception) {
+        reason = exception.what();
+    }
+    catch (...) {
+        reason = "unknown exception";
+    }
+    m_pending = PendingWork::None;
+    Log.error("BlackFlow routing plugin threw an exception:", reason);
+    if (m_session != nullptr && !m_session->terminated()) {
+        m_session->fail("routing_plugin_exception", reason, FailureDisposition::StopTask);
+    }
+    Task.set_task_base("BlackFlow@Roguelike@RoutingAction", "BlackFlow@Roguelike@StrategyTerminated-Enter");
+    report_outputs();
+    return true;
+}
+
+bool BlackFlowRoutingTaskPlugin::run_impl()
+{
     LogTraceFunction;
     const PendingWork work = m_pending;
     m_pending = PendingWork::None;

@@ -120,6 +120,31 @@ void BlackFlowLifecycleTaskPlugin::reset_in_run_variables()
 
 bool BlackFlowLifecycleTaskPlugin::_run()
 {
+    std::string reason;
+    try {
+        return run_impl();
+    }
+    catch (const std::exception& exception) {
+        reason = exception.what();
+    }
+    catch (...) {
+        reason = "unknown exception";
+    }
+    m_pending = PendingWork::None;
+    m_pending_details = {};
+    m_terminal_trigger.clear();
+    m_terminal_pre_task.clear();
+    Log.error("BlackFlow lifecycle plugin threw an exception:", reason);
+    if (m_session != nullptr && !m_session->terminated()) {
+        m_session->fail("lifecycle_plugin_exception", reason, FailureDisposition::StopTask);
+    }
+    Task.set_task_base("BlackFlow@Roguelike@StrategyTerminalAction", "BlackFlow@Roguelike@ExitThenStop-Enter");
+    report_outputs();
+    return true;
+}
+
+bool BlackFlowLifecycleTaskPlugin::run_impl()
+{
     const PendingWork work = m_pending;
     const json::value details = std::move(m_pending_details);
     const std::string trigger = std::move(m_terminal_trigger);

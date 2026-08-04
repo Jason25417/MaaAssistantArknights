@@ -25,6 +25,8 @@ private:
         RecoverMapFailed,
     };
 
+    // 见 BlackFlowRoutingTaskPlugin.h：_run() 只当异常闸门，真正的逻辑在 run_impl()。
+    bool run_impl();
     void restore_node_completion_action();
 
     mutable PendingWork m_pending = PendingWork::None;

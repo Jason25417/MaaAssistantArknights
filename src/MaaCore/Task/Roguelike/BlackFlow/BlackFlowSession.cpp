@@ -1628,6 +1628,18 @@ void BlackFlowSession::cancel_transaction()
     m_transaction_id.clear();
 }
 
+// action_id 由 (movement, source, target, landing) 拼成，站在同一节点重规划必然重现同一个 id，
+// 所以写进禁用集能稳定剪掉这条候选。禁用集的作用域只到「还站在原地」为止：换层、当前节点变化、
+// 移动落地对账、整局重置这四处都会 clear()，因此这里的登记不会跨位置泄漏。
+void BlackFlowSession::mark_action_unreachable(const std::string& action_id)
+{
+    if (action_id.empty()) {
+        return;
+    }
+    m_unreachable_actions.emplace(action_id);
+    m_verified_move_arc.reset();
+}
+
 bool BlackFlowSession::set_current_floor(int floor, std::string* error)
 {
     if (floor <= 0) {

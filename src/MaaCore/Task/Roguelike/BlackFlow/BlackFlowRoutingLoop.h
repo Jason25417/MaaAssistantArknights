@@ -151,6 +151,19 @@ RoutingCycleOutcome execute_preview_cycle(Session& session, IBlackFlowTaskPort& 
     const MoveCandidate candidate = session.transaction()->proposal();
     if (!port.preview(candidate, session.viewport(), preview, panel_open, &error)) {
         session.cancel_transaction();
+        // 端口层失败不改变任何规划输入（地图、代价、资源、视口版本都没动），
+        // 不拉黑这条动作的话，下一轮 plan() 会原样重选同一候选 -> 确定性活锁。
+        // 游戏侧拒绝的两条路径（Cancelled / 安全性未通过）在 accept_preview 里已各自登记过，
+        // 这里补的只是端口侧失败这一路。
+        session.mark_action_unreachable(candidate.action_id);
+        Log.info(
+            "BlackFlow move preview failed; action marked unreachable",
+            "action",
+            candidate.action_id,
+            "panel_open",
+            panel_open ? "true" : "false",
+            "error",
+            error);
         if (panel_open) {
             return { RoutingCycleStatus::PreviewNeedsDismiss, "move_preview_failed", std::move(error) };
         }

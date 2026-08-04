@@ -592,7 +592,7 @@ RouteMetric move_metric(
     };
 }
 
-ReachableFeatures reachable_features(
+[[maybe_unused]] ReachableFeatures reachable_features(
     const MapSnapshot& map,
     OnDemandStateGraph& graph,
     OnDemandSafetyOracle& oracle,

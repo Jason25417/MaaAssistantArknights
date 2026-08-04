@@ -123,6 +123,10 @@ public:
     [[nodiscard]] bool validate_commit(std::string* error = nullptr) const;
     bool commit(EnteredPageObservation entered_page = {}, std::string* error = nullptr);
     void cancel_transaction();
+    // 端口层预览失败（等待任务超时 / 面板 OCR 认不出 / 名字没有节点类型映射）时，事务只是被取消，
+    // 动作没有进禁用集；规划输入一个比特都没变，下一轮必然重选同一候选 -> 确定性活锁。
+    // 由路由循环显式登记，让这条动作被 forbidden_action_ids 剪掉。
+    void mark_action_unreachable(const std::string& action_id);
     bool set_current_floor(int floor, std::string* error = nullptr);
 
     void clear_current_floor() noexcept { m_current_floor.reset(); }

@@ -73,6 +73,8 @@ private:
         std::optional<MovementKind> loaded_movement;
     };
 
+    // 见 BlackFlowRoutingTaskPlugin.h：_run() 只当异常闸门，真正的逻辑在 run_impl()。
+    bool run_impl();
     bool observe_inventory();
     bool scan_inventory_frame(InventoryFrame& frame, std::string* error) const;
     InventoryAnalysisOutcome

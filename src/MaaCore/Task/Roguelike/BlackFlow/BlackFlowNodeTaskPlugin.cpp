@@ -64,6 +64,32 @@ bool BlackFlowNodeTaskPlugin::verify(AsstMsg msg, const json::value& details) co
 
 bool BlackFlowNodeTaskPlugin::_run()
 {
+    std::string reason;
+    try {
+        return run_impl();
+    }
+    catch (const std::exception& exception) {
+        reason = exception.what();
+    }
+    catch (...) {
+        reason = "unknown exception";
+    }
+    m_pending = PendingWork::None;
+    m_pending_details = {};
+    Log.error("BlackFlow node plugin threw an exception:", reason);
+    if (m_session != nullptr && !m_session->terminated()) {
+        m_session->fail("node_plugin_exception", reason, FailureDisposition::StopTask);
+    }
+    // 抛出点可能在任一分支，两个槽位都收敛到 RecoveryFailed，链路才不会挂在半路的 baseTask 上。
+    restore_node_completion_action();
+    Task.set_task_base("BlackFlow@Roguelike@NodeDispatchAction", "BlackFlow@Roguelike@RecoveryFailed");
+    Task.set_task_base("BlackFlow@Roguelike@NodeResultAction", "BlackFlow@Roguelike@RecoveryFailed");
+    report_outputs();
+    return true;
+}
+
+bool BlackFlowNodeTaskPlugin::run_impl()
+{
     LogTraceFunction;
     const PendingWork work = m_pending;
     m_pending = PendingWork::None;
